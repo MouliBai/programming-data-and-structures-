@@ -1,288 +1,272 @@
-/* 
- * C Program to Construct a Binary Search Tree and perform deletion, inorder traversal on it
- */ 
-#include <stdio.h>
-#include <stdlib.h>
- 
-struct btnode
+# include <stdio.h>
+# include <malloc.h>
+
+struct node
 {
-    int value;
-    struct btnode *l;
-    struct btnode *r;
-}*root = NULL, *temp = NULL, *t2, *t1;
- 
-void delete1();
-void insert();
-void delete();
-void inorder(struct btnode *t);
-void create();
-void search(struct btnode *t);
-void preorder(struct btnode *t);
-void postorder(struct btnode *t);
-void search1(struct btnode *t,int data);
-int smallest(struct btnode *t);
-int largest(struct btnode *t);
- 
-int flag = 1;
- 
-void main()
+	int info;
+	struct node *lchild;
+	struct node *rchild;
+}*root;
+
+
+
+void find(int item,struct node **par,struct node **loc)
 {
-    int ch;
- 
-    printf("\nOPERATIONS ---");
-    printf("\n1 - Insert an element into tree\n");
-    printf("2 - Delete an element from the tree\n");
-    printf("3 - Inorder Traversal\n");
-    printf("4 - Preorder Traversal\n");
-    printf("5 - Postorder Traversal\n");
-    printf("6 - Exit\n");
-    while(1)
-    {
-        printf("\nEnter your choice : ");
-        scanf("%d", &ch);
-        switch (ch)
-        {
-        case 1:    
-            insert();
+	struct node *ptr,*ptrsave;
+
+	if(root==NULL)  /*tree empty*/
+	{
+		*loc=NULL;
+		*par=NULL;
+		return;
+	}
+	if(item==root->info) /*item is at root*/
+	{
+		*loc=root;
+		*par=NULL;
+		return;
+	}
+	/*Initialize ptr and ptrsave*/
+	if(item<root->info)
+		ptr=root->lchild;
+	else
+		ptr=root->rchild;
+	ptrsave=root;
+
+	while(ptr!=NULL)
+	{
+		if(item==ptr->info)
+		{       *loc=ptr;
+			*par=ptrsave;
+			return;
+		}
+		ptrsave=ptr;
+		if(item<ptr->info)
+			ptr=ptr->lchild;
+		else
+			ptr=ptr->rchild;
+	 }/*End of while */
+	 *loc=NULL;   /*item not found*/
+	 *par=ptrsave;
+}/*End of find()*/
+
+void insert(int item)
+{       struct node *tmp,*parent,*location;
+	find(item,&parent,&location);
+	if(location!=NULL)
+	{
+		printf("Item already present");
+		return;
+	}
+
+	tmp=(struct node *)malloc(sizeof(struct node));
+	tmp->info=item;
+	tmp->lchild=NULL;
+	tmp->rchild=NULL;
+
+	if(parent==NULL)
+		root=tmp;
+	else
+		if(item<parent->info)
+			parent->lchild=tmp;
+		else
+			parent->rchild=tmp;
+}/*End of insert()*/
+
+
+void case_a(struct node *par,struct node *loc )
+{
+	if(par==NULL) /*item to be deleted is root node*/
+		root=NULL;
+	else
+		if(loc==par->lchild)
+			par->lchild=NULL;
+		else
+			par->rchild=NULL;
+}/*End of case_a()*/
+
+void case_b(struct node *par,struct node *loc)
+{
+	struct node *child;
+
+	/*Initialize child*/
+	if(loc->lchild!=NULL) /*item to be deleted has lchild */
+		child=loc->lchild;
+	else                /*item to be deleted has rchild */
+		child=loc->rchild;
+
+	if(par==NULL )   /*Item to be deleted is root node*/
+		root=child;
+	else
+		if( loc==par->lchild)   /*item is lchild of its parent*/
+			par->lchild=child;
+		else                  /*item is rchild of its parent*/
+			par->rchild=child;
+}/*End of case_b()*/
+
+void case_c(struct node *par,struct node *loc)
+{
+	struct node *ptr,*ptrsave,*suc,*parsuc;
+
+	/*Find inorder successor and its parent*/
+	ptrsave=loc;
+	ptr=loc->rchild;
+	while(ptr->lchild!=NULL)
+	{
+		ptrsave=ptr;
+		ptr=ptr->lchild;
+	}
+	suc=ptr;
+	parsuc=ptrsave;
+
+	if(suc->lchild==NULL && suc->rchild==NULL)
+		case_a(parsuc,suc);
+	else
+		case_b(parsuc,suc);
+
+	if(par==NULL) /*if item to be deleted is root node */
+		root=suc;
+	else
+		if(loc==par->lchild)
+			par->lchild=suc;
+		else
+			par->rchild=suc;
+
+	suc->lchild=loc->lchild;
+	suc->rchild=loc->rchild;
+}/*End of case_c()*/
+int del(int item)
+{
+	struct node *parent,*location;
+	if(root==NULL)
+	{
+		printf("Tree empty");
+		return 0;
+	}
+
+	find(item,&parent,&location);
+	if(location==NULL)
+	{
+		printf("Item not present in tree");
+		return 0;
+	}
+
+	if(location->lchild==NULL && location->rchild==NULL)
+		case_a(parent,location);
+	if(location->lchild!=NULL && location->rchild==NULL)
+		case_b(parent,location);
+	if(location->lchild==NULL && location->rchild!=NULL)
+		case_b(parent,location);
+	if(location->lchild!=NULL && location->rchild!=NULL)
+		case_c(parent,location);
+	free(location);
+}/*End of del()*/
+
+int preorder(struct node *ptr)
+{
+	if(root==NULL)
+	{
+		printf("Tree is empty");
+		return 0;
+	}
+	if(ptr!=NULL)
+	{
+		printf("%d  ",ptr->info);
+		preorder(ptr->lchild);
+		preorder(ptr->rchild);
+	}
+}/*End of preorder()*/
+
+void inorder(struct node *ptr)
+{
+	if(root==NULL)
+	{
+		printf("Tree is empty");
+		return;
+	}
+	if(ptr!=NULL)
+	{
+		inorder(ptr->lchild);
+		printf("%d  ",ptr->info);
+		inorder(ptr->rchild);
+	}
+}/*End of inorder()*/
+
+void postorder(struct node *ptr)
+{
+	if(root==NULL)
+	{
+		printf("Tree is empty");
+		return;
+	}
+	if(ptr!=NULL)
+	{
+		postorder(ptr->lchild);
+		postorder(ptr->rchild);
+		printf("%d  ",ptr->info);
+	}
+}/*End of postorder()*/
+
+void display(struct node *ptr,int level)
+{
+	int i;
+	if ( ptr!=NULL )
+	{
+		display(ptr->rchild, level+1);
+		printf("\n");
+		for (i = 0; i < level; i++)
+			printf("    ");
+		printf("%d", ptr->info);
+		display(ptr->lchild, level+1);
+	}/*End of if*/
+}/*End of display()*/
+main()
+{
+	int choice,num;
+	root=NULL;
+	while(1)
+	{
+		printf("\n");
+		printf("1.Insert\n");
+		printf("2.Delete\n");
+		printf("3.Inorder Traversal\n");
+		printf("4.Preorder Traversal\n");
+		printf("5.Postorder Traversal\n");
+		printf("6.Display\n");
+		printf("7.Quit\n");
+		printf("Enter your choice : ");
+		scanf("%d",&choice);
+
+		switch(choice)
+		{
+		 case 1:
+			printf("Enter the number to be inserted : ");
+			scanf("%d",&num);
+			insert(num);
+			break;
+		 case 2:
+			printf("Enter the number to be deleted : ");
+			scanf("%d",&num);
+			del(num);
+			break;
+		 case 3:
+			inorder(root);
+			break;
+		 case 4:
+			preorder(root);
+			break;
+		 case 5:
+			postorder(root);
+			break;
+		 case 6:
+			display(root,1);
+			break;
+		 case 7:
+		 	exit(1);
             break;
-        case 2:    
-            delete();
-            break;
-        case 3:    
-            inorder(root);
-            break;
-        case 4:    
-            preorder(root);
-            break;
-        case 5:    
-            postorder(root);
-            break;
-        case 6:    
-            exit(0);
-        default :     
-            printf("Wrong choice, Please enter correct choice  ");
-            break;    
-        }
-    }
-}
- 
-/* To insert a node in the tree */
-void insert()
-{
-    create();
-    if (root == NULL) 
-        root = temp;
-    else    
-        search(root);    
-}
- 
-/* To create a node */
-void create()
-{
-    int data;
- 
-    printf("Enter data of node to be inserted : ");
-    scanf("%d", &data);
-    temp = (struct btnode *)malloc(1*sizeof(struct btnode));
-    temp->value = data;
-    temp->l = temp->r = NULL;
-}
- 
-/* Function to search the appropriate position to insert the new node */
-void search(struct btnode *t)
-{
-    if ((temp->value > t->value) && (t->r != NULL))      /* value more than root node value insert at right */
-        search(t->r);
-    else if ((temp->value > t->value) && (t->r == NULL))
-        t->r = temp;
-    else if ((temp->value < t->value) && (t->l != NULL))    /* value less than root node value insert at left */
-        search(t->l);
-    else if ((temp->value < t->value) && (t->l == NULL))
-        t->l = temp;
-}
- 
-/* recursive function to perform inorder traversal of tree */
-void inorder(struct btnode *t)
-{
-    if (root == NULL)
-    {
-        printf("No elements in a tree to display");
-        return;
-    }
-    if (t->l != NULL)    
-        inorder(t->l);
-    printf("%d -> ", t->value);
-    if (t->r != NULL)    
-        inorder(t->r);
-}
- 
-/* To check for the deleted node */
-void delete()
-{
-    int data;
- 
-    if (root == NULL)
-    {
-        printf("No elements in a tree to delete");
-        return;
-    }
-    printf("Enter the data to be deleted : ");
-    scanf("%d", &data);
-    t1 = root;
-    t2 = root;
-    search1(root, data);
-}
- 
-/* To find the preorder traversal */
-void preorder(struct btnode *t)
-{
-    if (root == NULL)
-    {
-        printf("No elements in a tree to display");
-        return;
-    }
-    printf("%d -> ", t->value);
-    if (t->l != NULL)    
-        preorder(t->l);
-    if (t->r != NULL)    
-        preorder(t->r);
-}
- 
-/* To find the postorder traversal */
-void postorder(struct btnode *t)
-{
-    if (root == NULL)
-    {
-        printf("No elements in a tree to display ");
-        return;
-    }
-    if (t->l != NULL) 
-        postorder(t->l);
-    if (t->r != NULL) 
-        postorder(t->r);
-    printf("%d -> ", t->value);
-}
- 
-/* Search for the appropriate position to insert the new node */
-void search1(struct btnode *t, int data)
-{
-    if ((data>t->value))
-    {
-        t1 = t;
-        search1(t->r, data);
-    }
-    else if ((data < t->value))
-    {
-        t1 = t;
-        search1(t->l, data);
-    }
-    else if ((data==t->value))
-    {
-        delete1(t);
-    }
-}
- 
-/* To delete a node */
-void delete1(struct btnode *t)
-{
-    int k;
- 
-    /* To delete leaf node */
-    if ((t->l == NULL) && (t->r == NULL))
-    {
-        if (t1->l == t)
-        {
-            t1->l = NULL;
-        }
-        else
-        {
-            t1->r = NULL;
-        }
-        t = NULL;
-        free(t);
-        return;
-    }
- 
-    /* To delete node having one left hand child */
-    else if ((t->r == NULL))
-    {
-        if (t1 == t)
-        {
-            root = t->l;
-            t1 = root;
-        }
-        else if (t1->l == t)
-        {
-            t1->l = t->l;
- 
-        }
-        else
-        {
-            t1->r = t->l;
-        }
-        t = NULL;
-        free(t);
-        return;
-    }
- 
-    /* To delete node having right hand child */
-    else if (t->l == NULL)
-    {
-        if (t1 == t)
-        {
-            root = t->r;
-            t1 = root;
-        }
-        else if (t1->r == t)
-            t1->r = t->r;
-        else
-            t1->l = t->r;
-        t == NULL;
-        free(t);
-        return;
-    }
- 
-    /* To delete node having two child */
-    else if ((t->l != NULL) && (t->r != NULL))  
-    {
-        t2 = root;
-        if (t->r != NULL)
-        {
-            k = smallest(t->r);
-            flag = 1;
-        }
-        else
-        {
-            k =largest(t->l);
-            flag = 2;
-        }
-        search1(root, k);
-        t->value = k;
-    }
- 
-}
- 
-/* To find the smallest element in the right sub tree */
-int smallest(struct btnode *t)
-{
-    t2 = t;
-    if (t->l != NULL)
-    {
-        t2 = t;
-        return(smallest(t->l));
-    }
-    else    
-        return (t->value);
-}
- 
-/* To find the largest element in the left sub tree */
-int largest(struct btnode *t)
-{
-    if (t->r != NULL)
-    {
-        t2 = t;
-        return(largest(t->r));
-    }
-    else    
-        return(t->value);
-}
+		 default:
+			printf("Wrong choice\n");
+		}/*End of switch */
+	}/*End of while */
+}/*End of main()*/
+
